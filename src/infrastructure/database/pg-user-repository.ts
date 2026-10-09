@@ -22,6 +22,15 @@ function toUser(row: UserRow): User {
 }
 
 export class PgUserRepository implements UserRepository {
+  async findById(id: string): Promise<User | null> {
+    const result = await pool.query<UserRow>(
+      "SELECT * FROM users WHERE id = $1",
+      [id]
+    );
+    const row = result.rows[0];
+    return row ? toUser(row) : null;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const result = await pool.query<UserRow>(
       "SELECT * FROM users WHERE email = $1",

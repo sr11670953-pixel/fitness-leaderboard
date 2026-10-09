@@ -5,17 +5,29 @@ import { env } from "../config/env.js";
 import type { RefreshTokenRepository } from "../domain/refresh-token.js";
 import type { User, UserRepository } from "../domain/user.js";
 
-
 export class ConflictError extends Error {}
 export class UnauthorizedError extends Error {}
+
+export interface RegisterInput {
+  email: string;
+  username: string;
+  password: string;
+}
 
 export interface LoginInput {
   email: string;
   password: string;
 }
 
+export type PublicUser = Omit<User, "passwordHash">;
+
 export interface LoginResult {
   user: PublicUser;
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
@@ -27,19 +39,11 @@ export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export interface RegisterInput {
-  email: string;
-  username: string;
-  password: string;
-}
-
-export type PublicUser = Omit<User, "passwordHash">;
-
 export class AuthService {
-constructor(
-  private readonly users: UserRepository,
-  private readonly refreshTokens: RefreshTokenRepository
-) {}
+  constructor(
+    private readonly users: UserRepository,
+    private readonly refreshTokens: RefreshTokenRepository
+  ) {}
 
   async register(input: RegisterInput): Promise<PublicUser> {
     const email = input.email.toLowerCase();
@@ -62,7 +66,7 @@ constructor(
     });
     return publicUser;
   }
-  
+
   async login(input: LoginInput): Promise<LoginResult> {
     const user = await this.users.findByEmail(input.email.toLowerCase());
 
@@ -72,6 +76,48 @@ constructor(
       throw new UnauthorizedError("Credenciales inválidas");
     }
 
+    const { accessToken, refreshToken } = await this.issueTokens(
+      user,
+      randomUUID()
+    );
+
+    const { passwordHash: _omit, ...publicUser } = user;
+    return { user: publicUser, accessToken, refreshToken };
+  }
+
+  async refresh(token: string): Promise<TokenPair> {
+    const stored = await this.refreshTokens.findByHash(hashToken(token));
+    if (!stored) {
+      throw new UnauthorizedError("Sesión inválida");
+    }
+
+    if (stored.revokedAt !== null) {
+      // Token reutilizado: posible robo, se cierra toda la sesión
+      await this.refreshTokens.revokeFamily(stored.familyId);
+      throw new UnauthorizedError("Sesión inválida");
+    }
+
+    if (stored.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedError("Sesión expirada");
+    }
+
+    const user = await this.users.findById(stored.userId);
+    if (!user) {
+      throw new UnauthorizedError("Sesión inválida");
+    }
+
+    await this.refreshTokens.revoke(stored.id);
+    return this.issueTokens(user, stored.familyId);
+  }
+
+  async logout(token: string): Promise<void> {
+    const stored = await this.refreshTokens.findByHash(hashToken(token));
+    if (stored) {
+      await this.refreshTokens.revokeFamily(stored.familyId);
+    }
+  }
+
+  private async issueTokens(user: User, familyId: string): Promise<TokenPair> {
     const accessToken = jwt.sign(
       { sub: user.id, role: user.role },
       env.JWT_SECRET,
@@ -82,11 +128,10 @@ constructor(
     await this.refreshTokens.create({
       userId: user.id,
       tokenHash: hashToken(refreshToken),
-      familyId: randomUUID(),
+      familyId,
       expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
     });
 
-    const { passwordHash: _omit, ...publicUser } = user;
-    return { user: publicUser, accessToken, refreshToken };
+    return { accessToken, refreshToken };
   }
 }

@@ -89,3 +89,53 @@ authRouter.post(
     }
   }
 );
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  path: "/auth",
+} as const;
+
+authRouter.post(
+  "/refresh",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token: unknown = req.cookies?.refreshToken;
+    if (typeof token !== "string" || token.length === 0) {
+      res.status(401).json({ error: "Sesión inválida" });
+      return;
+    }
+
+    try {
+      const { accessToken, refreshToken } = await authService.refresh(token);
+      res.cookie("refreshToken", refreshToken, {
+        ...REFRESH_COOKIE_OPTIONS,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.status(200).json({ accessToken });
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
+        res.status(401).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+);
+
+authRouter.post(
+  "/logout",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const token: unknown = req.cookies?.refreshToken;
+    try {
+      if (typeof token === "string" && token.length > 0) {
+        await authService.logout(token);
+      }
+      res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
