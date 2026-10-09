@@ -7,6 +7,7 @@ import {
 } from "../../application/auth-service.js";
 import { PgRefreshTokenRepository } from "../../infrastructure/database/pg-refresh-token-repository.js";
 import { PgUserRepository } from "../../infrastructure/database/pg-user-repository.js";
+import { authenticate } from "../middlewares/authenticate.js";
 
 const registerSchema = z.object({
   email: z.string().email().max(255),
@@ -139,3 +140,7 @@ authRouter.post(
     }
   }
 );
+
+authRouter.get("/me", authenticate, (req: Request, res: Response) => {
+  res.json({ user: req.user });
+});
