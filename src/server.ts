@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { env } from "./config/env.js";
 import { authRouter } from "./presentation/routes/auth-routes.js";
 import cookieParser from "cookie-parser";
+import { activityRouter } from "./presentation/routes/activity-routes.js";
 
 const app = express();
 app.use(express.json());
@@ -12,6 +13,7 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/activities", activityRouter);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
