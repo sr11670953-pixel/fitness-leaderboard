@@ -3,8 +3,10 @@ import { env } from "./config/env.js";
 import { authRouter } from "./presentation/routes/auth-routes.js";
 import cookieParser from "cookie-parser";
 import { activityRouter } from "./presentation/routes/activity-routes.js";
+import cors from "cors";
 
 const app = express();
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
