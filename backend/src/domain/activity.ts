@@ -25,6 +25,14 @@ export interface NewActivityLog {
   performedAt: Date;
   points: number;
 }
+export interface ActivityForPoints {
+  id: string;
+  userId: string;
+  durationMinutes: number;
+  distanceKm: number | null;
+  pointsPerMinute: number;
+  pointsPerKm: number;
+}
 
 export interface ActivityRepository {
   findTypeById(id: number): Promise<ActivityType | null>;
@@ -33,4 +41,6 @@ export interface ActivityRepository {
   listByUser(userId: string): Promise<ActivityLog[]>;
   findByIdForUser(id: string, userId: string): Promise<ActivityLog | null>;
   deleteForUser(id: string, userId: string): Promise<boolean>;
+    findForPoints(id: string): Promise<ActivityForPoints | null>;
+  savePoints(activityLogId: string, userId: string, points: number): Promise<void>;
 }

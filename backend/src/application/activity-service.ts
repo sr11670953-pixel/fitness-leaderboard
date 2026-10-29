@@ -15,7 +15,7 @@ export interface CreateActivityInput {
 }
 
 export function calculatePoints(
-  type: ActivityType,
+  type: Pick<ActivityType, "pointsPerMinute" | "pointsPerKm">,
   durationMinutes: number,
   distanceKm: number | null
 ): number {

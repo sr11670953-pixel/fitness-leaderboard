@@ -1,4 +1,5 @@
 import type {
+  ActivityForPoints,
   ActivityLog,
   ActivityRepository,
   ActivityType,
@@ -23,6 +24,14 @@ interface ActivityLogRow {
   performed_at: Date;
   created_at: Date;
   points: number | null;
+}
+interface ActivityForPointsRow {
+  id: string;
+  user_id: string;
+  duration_minutes: number;
+  distance_km: string | null;
+  points_per_minute: string;
+  points_per_km: string;
 }
 
 function toActivityType(row: ActivityTypeRow): ActivityType {
@@ -141,5 +150,38 @@ export class PgActivityRepository implements ActivityRepository {
       [id, userId]
     );
     return (result.rowCount ?? 0) > 0;
+  }
+    async findForPoints(id: string): Promise<ActivityForPoints | null> {
+    const result = await pool.query<ActivityForPointsRow>(
+      `SELECT al.id, al.user_id, al.duration_minutes, al.distance_km,
+              at.points_per_minute, at.points_per_km
+       FROM activity_logs al
+       JOIN activity_types at ON at.id = al.activity_type_id
+       WHERE al.id = $1`,
+      [id]
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      id: row.id,
+      userId: row.user_id,
+      durationMinutes: row.duration_minutes,
+      distanceKm: row.distance_km === null ? null : Number(row.distance_km),
+      pointsPerMinute: Number(row.points_per_minute),
+      pointsPerKm: Number(row.points_per_km),
+    };
+  }
+
+  async savePoints(
+    activityLogId: string,
+    userId: string,
+    points: number
+  ): Promise<void> {
+    await pool.query(
+      `INSERT INTO point_events (user_id, activity_log_id, points, reason)
+       VALUES ($1, $2, $3, 'activity')
+       ON CONFLICT (activity_log_id) DO NOTHING`,
+      [userId, activityLogId, points]
+    );
   }
 }
