@@ -20,10 +20,14 @@ Comprobar tipos y compilar: `npm run build`.
 - `src/stores/auth.ts`: sesión. El `accessToken` vive solo en memoria. `restoreSession()` lo recupera al recargar usando la cookie del refresh token.
 - `src/stores/activities.ts`: actividades con estado normalizado (`byId` + `ids`), estados de carga y error.
 - `src/router/index.ts`: rutas y Navigation Guard.
-- `src/views/`: Login, Registro, Actividades y Ranking.
-- `src/data/mockLeaderboard.ts`: datos de mentira del ranking.
+- `src/api/leaderboardSocket.ts`: cliente WebSocket del ranking (reconexión con espera creciente), validador del mensaje y simulador. Dirección por defecto: `ws://localhost:3000/ws/leaderboard` (se cambia con `VITE_WS_URL`).
+- `src/stores/leaderboard.ts`: estado del ranking. Si no hay servidor, usa el simulador y avisa en pantalla.
+- `src/stores/challenges.ts` y `src/utils/challenges.ts`: retos con datos de mentira, unirse y estado (en curso, próximo, finalizado).
+- `src/views/`: Login, Registro, Actividades, Ranking, Retos, Detalle de reto y Mi cuenta.
+- `src/data/`: datos de mentira del ranking (misma forma que el contrato real) y de los retos.
 
 ## Pendiente cuando el backend lo tenga
 
-- Reemplazar `mockLeaderboard` por la llamada real al ranking y conectar WebSockets.
-- `GET /auth/me` devuelve solo `id` y `role`, así que tras recargar la página el nombre de usuario no se puede mostrar. Si el backend devolviera también `username` y `email`, el encabezado lo mostraría solo.
+- Ranking: cuando exista `ws://localhost:3000/ws/leaderboard` con el mensaje `{ type: 'leaderboard', entries: [{ position, userId, username, points }] }`, el simulador se apaga solo; no hay que tocar la pantalla.
+- Retos: reemplazar los datos falsos de `stores/challenges.ts` por `GET /challenges` y `POST /challenges/:id/join` (los bloques están comentados en el código).
+- `GET /auth/me` devuelve solo `id` y `role`, así que tras recargar la página el nombre de usuario no se puede mostrar. Si el backend devolviera también `username` y `email`, el encabezado y Mi cuenta lo mostrarían solos.
