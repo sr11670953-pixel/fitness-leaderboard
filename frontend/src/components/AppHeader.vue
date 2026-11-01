@@ -26,7 +26,8 @@ async function handleLogout(): Promise<void> {
       <nav v-if="auth.isAuthenticated" class="bar__nav" aria-label="Principal">
         <RouterLink :to="{ name: 'activities' }">Actividades</RouterLink>
         <RouterLink :to="{ name: 'leaderboard' }">Ranking</RouterLink>
-        <span class="bar__user">{{ auth.user?.username ?? 'Mi cuenta' }}</span>
+        <RouterLink :to="{ name: 'challenges' }">Retos</RouterLink>
+        <RouterLink :to="{ name: 'account' }">{{ auth.user?.username ?? 'Mi cuenta' }}</RouterLink>
         <button class="btn btn--ghost bar__logout" type="button" :disabled="auth.loading" @click="handleLogout">
           Cerrar sesión
         </button>
@@ -80,7 +81,6 @@ async function handleLogout(): Promise<void> {
   border-bottom-color: #fff;
   color: #fff;
 }
-.bar__user { color: #cfd8e3; }
 .bar__logout {
   min-height: 2.25rem;
   border-color: #cfd8e3;

@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api, parseApiError, refreshAccessToken } from '@/api/client'
 import { useActivitiesStore } from '@/stores/activities'
+import { useChallengesStore } from '@/stores/challenges'
 import type {
   FieldErrors,
   LoginInput,
@@ -38,6 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     accessToken.value = null
     useActivitiesStore().reset()
+    useChallengesStore().reset()
   }
 
   async function register(input: RegisterInput): Promise<boolean> {

@@ -36,6 +36,25 @@ const router = createRouter({
       component: () => import('@/views/LeaderboardView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/challenges',
+      name: 'challenges',
+      component: () => import('@/views/ChallengesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/challenges/:id',
+      name: 'challenge-detail',
+      component: () => import('@/views/ChallengeDetailView.vue'),
+      props: true,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/account',
+      name: 'account',
+      component: () => import('@/views/AccountView.vue'),
+      meta: { requiresAuth: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: { name: 'activities' } },
   ],
 })
