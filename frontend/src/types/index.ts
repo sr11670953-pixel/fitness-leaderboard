@@ -68,10 +68,27 @@ export interface ApiErrorBody {
   details?: FieldErrors
 }
 
+/** Fila del ranking. Es exactamente la que llega por WebSocket (contrato del backend). */
 export interface LeaderboardEntry {
-  rank: number
+  position: number
   userId: string
   username: string
   points: number
-  activities: number
 }
+
+/** Mensaje de ws://localhost:3000/ws/leaderboard */
+export interface LeaderboardMessage {
+  type: 'leaderboard'
+  entries: LeaderboardEntry[]
+}
+
+export type ConnectionState = 'idle' | 'connecting' | 'open' | 'reconnecting'
+
+export interface Challenge {
+  id: string
+  name: string
+  startsAt: string
+  endsAt: string
+}
+
+export type ChallengeStatus = 'active' | 'upcoming' | 'finished'
