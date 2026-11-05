@@ -4,6 +4,8 @@ import { authRouter } from "./presentation/routes/auth-routes.js";
 import cookieParser from "cookie-parser";
 import { activityRouter } from "./presentation/routes/activity-routes.js";
 import cors from "cors";
+import { pointsQueue } from "./container.js";
+import { pool } from "./infrastructure/database/pool.js";
 
 const app = express();
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
@@ -22,6 +24,15 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: "Error interno del servidor" });
 });
 
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${env.PORT}`);
 });
+async function shutdown(): Promise<void> {
+  server.close();
+  await pointsQueue.stop();
+  await pool.end();
+  process.exit(0);
+}
+
+process.on("SIGINT", () => void shutdown());
+process.on("SIGTERM", () => void shutdown());

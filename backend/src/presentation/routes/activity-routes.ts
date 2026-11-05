@@ -5,7 +5,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../../application/activity-service.js";
-import { PgActivityRepository } from "../../infrastructure/database/pg-activity-repository.js";
+import { activityRepository, pointsQueue } from "../../container.js";
 import { authenticate } from "../middlewares/authenticate.js";
 
 const createActivitySchema = z.object({
@@ -17,7 +17,7 @@ const createActivitySchema = z.object({
 
 const idSchema = z.string().uuid();
 
-const activityService = new ActivityService(new PgActivityRepository());
+const activityService = new ActivityService(activityRepository, pointsQueue);
 
 export const activityRouter = Router();
 

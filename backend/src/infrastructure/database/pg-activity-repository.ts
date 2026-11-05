@@ -104,11 +104,6 @@ export class PgActivityRepository implements ActivityRepository {
       const logId = inserted.rows[0]?.id;
       if (!logId) throw new Error("No se pudo crear la actividad");
 
-      await client.query(
-        `INSERT INTO point_events (user_id, activity_log_id, points, reason)
-         VALUES ($1, $2, $3, $4)`,
-        [activity.userId, logId, activity.points, "activity"]
-      );
 
       const full = await client.query<ActivityLogRow>(
         `${SELECT_ACTIVITY} WHERE al.id = $1`,

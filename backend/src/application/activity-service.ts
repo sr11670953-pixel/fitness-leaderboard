@@ -1,9 +1,10 @@
+import type { JobQueue, PointsJob } from "../domain/job-queue.js";
 import type {
+
   ActivityLog,
   ActivityRepository,
   ActivityType,
 } from "../domain/activity.js";
-
 export class NotFoundError extends Error {}
 export class ValidationError extends Error {}
 
@@ -25,7 +26,10 @@ export function calculatePoints(
 }
 
 export class ActivityService {
-  constructor(private readonly activities: ActivityRepository) {}
+  constructor(
+  private readonly activities: ActivityRepository,
+  private readonly pointsQueue: JobQueue<PointsJob>
+) {}
 
   listTypes(): Promise<ActivityType[]> {
     return this.activities.listTypes();
@@ -44,22 +48,26 @@ export class ActivityService {
       throw new ValidationError("La fecha no puede estar en el futuro");
     }
 
-    const points = calculatePoints(
-      type,
-      input.durationMinutes,
-      input.distanceKm
-    );
-
-    return this.activities.create({
+    const activity = await this.activities.create({
       userId,
       activityTypeId: type.id,
       durationMinutes: input.durationMinutes,
       distanceKm: input.distanceKm,
       performedAt: input.performedAt,
-      points,
     });
-  }
 
+    try {
+      await this.pointsQueue.enqueue({
+        activityLogId: activity.id,
+        userId,
+      });
+    } catch (error) {
+      // La actividad ya está guardada; el paso 5d recalcula los puntos que falten.
+      console.error("No se pudo encolar el cálculo de puntos", error);
+    }
+
+    return activity;
+  }
   list(userId: string): Promise<ActivityLog[]> {
     return this.activities.listByUser(userId);
   }
