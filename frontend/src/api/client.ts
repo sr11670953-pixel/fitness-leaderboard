@@ -69,7 +69,7 @@ api.interceptors.response.use(
       return await api(original)
     } catch (refreshError) {
       // Si el reintento falló por otra razón distinta a la sesión, no la cerramos.
-      if (isAxiosError(refreshError) && refreshError.config?.url === '/auth/refresh') {
+      if (isAxiosError(refreshError) && refreshError.response?.status === 401) {
         handlers?.setToken(null)
         handlers?.onSessionExpired()
       }

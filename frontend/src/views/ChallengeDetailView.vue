@@ -13,6 +13,7 @@ const { loading, error, loaded, joiningId, joinError } = storeToRefs(store)
 
 const challenge = computed(() => store.find(props.id))
 const summary = computed(() => (challenge.value ? describeChallenge(challenge.value) : null))
+const mockMode = import.meta.env.VITE_USE_MOCK_CHALLENGES !== 'false'
 const joined = computed(() => store.isJoined(props.id))
 
 const showLoading = computed(() => loading.value || (!loaded.value && error.value === null))
@@ -29,6 +30,7 @@ const joinLabel = computed(() => {
 
 onMounted(() => {
   if (!loaded.value) void store.load()
+  void store.loadLeaderboard(props.id)
 })
 </script>
 
@@ -83,7 +85,12 @@ onMounted(() => {
         {{ joinLabel }}
       </button>
 
-      <p class="alert note" role="note">
+      <h2>Ranking del reto</h2>
+      <p v-if="store.leaderboardLoading" role="status">Cargando ranking…</p>
+      <p v-else-if="store.leaderboardError" class="alert alert--error" role="alert">{{ store.leaderboardError }} <button class="btn btn--ghost" @click="store.loadLeaderboard(props.id)">Reintentar</button></p>
+      <p v-else-if="store.leaderboard.length === 0">Aún no hay participantes con puntos.</p>
+      <table v-else><thead><tr><th>Posición</th><th>Usuario</th><th>Puntos</th></tr></thead><tbody><tr v-for="entry in store.leaderboard" :key="entry.userId"><td>{{ entry.position }}</td><td>{{ entry.username }}</td><td>{{ entry.points }}</td></tr></tbody></table>
+      <p v-if="mockMode" class="alert note" role="note">
         Estos son datos de ejemplo. La inscripción real se conectará cuando el backend exponga la ruta.
       </p>
     </section>

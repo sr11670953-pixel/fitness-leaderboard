@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { api, parseApiError } from '@/api/client'
 import { defineStore } from 'pinia'
 import {
   createLeaderboardSimulator,
@@ -40,8 +41,22 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
     simulator.start()
   }
 
+  async function loadInitial(): Promise<void> {
+    try {
+      const { data } = await api.get<{ entries: LeaderboardEntry[] } | LeaderboardEntry[]>('/leaderboard')
+      entries.value = (Array.isArray(data) ? data : data.entries).sort((a, b) => a.position - b.position)
+      hasLiveData.value = true
+    } catch (e) { error.value = parseApiError(e).message }
+  }
+
   function start(): void {
-    if (socket !== null) return
+    if (socket !== null || simulator !== null) return
+    if (import.meta.env.VITE_USE_MOCK_LEADERBOARD !== 'false') {
+      entries.value = []
+      connection.value = 'open'
+      startSimulator()
+      return
+    }
     entries.value = []
     error.value = null
     isSimulated.value = false
@@ -66,11 +81,12 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
         } else {
           error.value =
             'No se pudo conectar con el ranking en vivo. Se intentará de nuevo automáticamente.'
-          startSimulator()
+          // En modo real no se sustituyen datos por simulaciones.
         }
       },
     })
     socket.start()
+    void loadInitial()
   }
 
   function stop(): void {
@@ -98,5 +114,6 @@ export const useLeaderboardStore = defineStore('leaderboard', () => {
     start,
     stop,
     retry,
+    loadInitial,
   }
 })
