@@ -8,3 +8,11 @@ export const pointsQueue = new InMemoryJobQueue<PointsJob>();
 
 const pointsWorker = new PointsWorker(activityRepository);
 pointsQueue.process((job) => pointsWorker.handle(job));
+
+export async function recoverMissingPoints(): Promise<number> {
+  const pending = await activityRepository.listWithoutPoints();
+  for (const job of pending) {
+    await pointsQueue.enqueue(job);
+  }
+  return pending.length;
+}

@@ -146,6 +146,19 @@ export class PgActivityRepository implements ActivityRepository {
     );
     return (result.rowCount ?? 0) > 0;
   }
+  async listWithoutPoints(): Promise<{ activityLogId: string; userId: string }[]> {
+    const result = await pool.query<{ id: string; user_id: string }>(
+      `SELECT al.id, al.user_id
+       FROM activity_logs al
+       LEFT JOIN point_events pe ON pe.activity_log_id = al.id
+       WHERE pe.activity_log_id IS NULL`
+    );
+    return result.rows.map((row) => ({
+      activityLogId: row.id,
+      userId: row.user_id,
+    }));
+  }
+
     async findForPoints(id: string): Promise<ActivityForPoints | null> {
     const result = await pool.query<ActivityForPointsRow>(
       `SELECT al.id, al.user_id, al.duration_minutes, al.distance_km,
