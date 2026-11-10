@@ -60,4 +60,12 @@ export class PgUserRepository implements UserRepository {
     if (!row) throw new Error("No se pudo crear el usuario");
     return toUser(row);
   }
+    async findUsernamesByIds(ids: string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const result = await pool.query<{ id: string; username: string }>(
+      "SELECT id, username FROM users WHERE id::text = ANY($1::text[])",
+      [ids]
+    );
+    return new Map(result.rows.map((row) => [row.id, row.username]));
+  }
 }

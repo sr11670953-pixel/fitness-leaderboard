@@ -20,4 +20,5 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findByUsername(username: string): Promise<User | null>;
   create(user: NewUser): Promise<User>;
+    findUsernamesByIds(ids: string[]): Promise<Map<string, string>>;
 }
