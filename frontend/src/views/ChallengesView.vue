@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import ChallengeStatusChip from '@/components/ChallengeStatusChip.vue'
@@ -7,6 +7,16 @@ import { useChallengesStore } from '@/stores/challenges'
 import { describeChallenge, statusOrder } from '@/utils/challenges'
 
 const store = useChallengesStore()
+const mockMode = import.meta.env.VITE_USE_MOCK_CHALLENGES !== 'false'
+const showCreate = ref(false)
+const name = ref('')
+const startsAt = ref('')
+const endsAt = ref('')
+async function createChallenge(): Promise<void> {
+  if (!name.value.trim() || !startsAt.value || !endsAt.value || Date.parse(endsAt.value) <= Date.parse(startsAt.value)) return
+  const ok = await store.create({ name: name.value.trim(), startsAt: new Date(startsAt.value).toISOString(), endsAt: new Date(endsAt.value).toISOString() })
+  if (ok) { showCreate.value = false; name.value = ''; startsAt.value = ''; endsAt.value = '' }
+}
 const { items, loading, error, loaded, joiningId, joinError } = storeToRefs(store)
 
 const rows = computed(() => {
@@ -49,7 +59,19 @@ onMounted(() => {
       </button>
     </div>
 
-    <p class="alert" role="note">
+    <button class="btn" type="button" @click="showCreate = !showCreate">{{ showCreate ? 'Cancelar' : 'Crear reto' }}</button>
+    <form v-if="showCreate" class="panel" @submit.prevent="createChallenge">
+      <h2>Nuevo reto</h2>
+      <label for="challenge-name">Nombre</label>
+      <input id="challenge-name" v-model="name" required maxlength="120" />
+      <label for="challenge-start">Inicio</label>
+      <input id="challenge-start" v-model="startsAt" type="datetime-local" required />
+      <label for="challenge-end">Fin</label>
+      <input id="challenge-end" v-model="endsAt" type="datetime-local" required :min="startsAt" />
+      <p v-if="startsAt && endsAt && endsAt <= startsAt" class="alert alert--error">La fecha final debe ser posterior al inicio.</p>
+      <button class="btn" type="submit" :disabled="store.creating || !name.trim() || !startsAt || !endsAt || endsAt <= startsAt">{{ store.creating ? 'Creando…' : 'Guardar reto' }}</button>
+    </form>
+    <p v-if="mockMode" class="alert" role="note">
       Estos son datos de ejemplo. Los retos reales se conectarán cuando el backend exponga la ruta.
     </p>
 

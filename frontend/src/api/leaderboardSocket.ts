@@ -2,7 +2,7 @@ import { mockLeaderboard } from '@/data/mockLeaderboard'
 import type { ConnectionState, LeaderboardEntry, LeaderboardMessage } from '@/types'
 
 const RECONNECT_BASE_MS = 1000
-const RECONNECT_MAX_MS = 15_000
+const RECONNECT_MAX_MS = 30_000
 const SIMULATOR_INTERVAL_MS = 3000
 
 /** Algo que se puede encender y apagar: el socket real o el simulador. */
@@ -72,7 +72,7 @@ export function deliverRaw(raw: string, onEntries: (entries: LeaderboardEntry[])
   return true
 }
 
-/** Cliente WebSocket que se reconecta solo con espera creciente (1 s, 2 s, 4 s… hasta 15 s). */
+/** Cliente WebSocket que se reconecta solo con espera creciente (1 s, 2 s, 4 s… hasta 30 s). */
 export function createLeaderboardSocket(
   callbacks: SocketCallbacks,
   url: string = resolveSocketUrl(),

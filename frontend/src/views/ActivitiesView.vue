@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import ActivityForm from '@/components/ActivityForm.vue'
 import { useActivitiesStore } from '@/stores/activities'
 
 const store = useActivitiesStore()
+const page = ref(1)
+const pageSize = 10
+const pageCount = computed(() => Math.max(1, Math.ceil(store.items.length / pageSize)))
+const visibleActivities = computed(() => store.items.slice((page.value - 1) * pageSize, page.value * pageSize))
+watch(() => store.items.length, () => { if (page.value > pageCount.value) page.value = pageCount.value })
 
 const dateFormat = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -50,7 +55,7 @@ async function confirmDelete(id: string, name: string): Promise<void> {
         </p>
 
         <ul v-else class="list">
-          <li v-for="activity in store.items" :key="activity.id" class="row">
+          <li v-for="activity in visibleActivities" :key="activity.id" class="row">
             <div class="row__main">
               <h3>{{ activity.activityTypeName }}</h3>
               <p class="row__meta">
@@ -59,8 +64,8 @@ async function confirmDelete(id: string, name: string): Promise<void> {
               <p class="row__meta">{{ dateFormat.format(new Date(activity.performedAt)) }}</p>
             </div>
             <p class="row__points">
-              <span class="row__num">{{ activity.points }}</span>
-              <span class="row__unit">pts</span>
+              <span v-if="activity.points === 0" class="row__unit" role="status">calculando...</span>
+              <template v-else><span class="row__num">{{ activity.points }}</span><span class="row__unit">pts</span></template>
             </p>
             <button
               class="btn btn--text"
@@ -73,6 +78,11 @@ async function confirmDelete(id: string, name: string): Promise<void> {
             </button>
           </li>
         </ul>
+        <nav v-if="pageCount > 1" aria-label="Paginación de actividades" class="pagination">
+          <button class="btn btn--ghost" :disabled="page === 1" @click="page--">Anterior</button>
+          <span>Página {{ page }} de {{ pageCount }}</span>
+          <button class="btn btn--ghost" :disabled="page === pageCount" @click="page++">Siguiente</button>
+        </nav>
         <p v-if="store.items.length > 0 && store.error" class="alert alert--error" role="alert">{{ store.error }}</p>
       </section>
     </div>
@@ -80,6 +90,7 @@ async function confirmDelete(id: string, name: string): Promise<void> {
 </template>
 
 <style scoped>
+.pagination { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:1rem; }
 .total { text-align: right; }
 .total__num {
   display: block;

@@ -18,6 +18,9 @@ export const useActivitiesStore = defineStore('activities', () => {
   const deletingId = ref<string | null>(null)
   const error = ref<string | null>(null)
   const fieldErrors = ref<FieldErrors>({})
+  const pendingIds = ref<string[]>([])
+  let pollTimer: ReturnType<typeof setTimeout> | null = null
+  let pollGeneration = 0
 
   const items = computed<Activity[]>(() =>
     ids.value
@@ -79,12 +82,29 @@ export const useActivitiesStore = defineStore('activities', () => {
     }
   }
 
+  async function pollPending(generation: number, attempts: number): Promise<void> {
+    if (generation !== pollGeneration || pendingIds.value.length === 0 || attempts >= 5) return
+    pollTimer = setTimeout(async () => {
+      pollTimer = null
+      if (generation !== pollGeneration) return
+      await fetchActivities()
+      pendingIds.value = pendingIds.value.filter((id) => byId.value[id]?.points === 0)
+      if (pendingIds.value.length) void pollPending(generation, attempts + 1)
+    }, 2000)
+  }
+
   async function createActivity(input: NewActivityInput): Promise<boolean> {
     saving.value = true
     clearError()
     try {
       const { data } = await api.post<Activity>('/activities', input)
       upsert(data)
+      if (data.points === 0 && !pendingIds.value.includes(data.id)) pendingIds.value.push(data.id)
+      await fetchActivities()
+      pendingIds.value = pendingIds.value.filter((id) => byId.value[id]?.points === 0)
+      if (pollTimer !== null) clearTimeout(pollTimer)
+      pollTimer = null
+      void pollPending(++pollGeneration, 0)
       return true
     } catch (e) {
       const parsed = parseApiError(e)
@@ -102,6 +122,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     try {
       await api.delete(`/activities/${id}`)
       remove(id)
+      pendingIds.value = pendingIds.value.filter((pending) => pending !== id)
       return true
     } catch (e) {
       error.value = parseApiError(e).message
@@ -112,6 +133,10 @@ export const useActivitiesStore = defineStore('activities', () => {
   }
 
   function reset(): void {
+    pollGeneration++
+    if (pollTimer !== null) clearTimeout(pollTimer)
+    pollTimer = null
+    pendingIds.value = []
     byId.value = {}
     ids.value = []
     types.value = []
@@ -130,6 +155,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     deletingId,
     error,
     fieldErrors,
+    pendingIds,
     items,
     totalPoints,
     totalMinutes,
