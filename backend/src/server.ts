@@ -4,7 +4,7 @@ import { authRouter } from "./presentation/routes/auth-routes.js";
 import cookieParser from "cookie-parser";
 import { activityRouter } from "./presentation/routes/activity-routes.js";
 import cors from "cors";
-import { pointsQueue, recoverMissingPoints } from "./container.js";
+import { pointsQueue, rebuildLeaderboard, recoverMissingPoints } from "./container.js";
 import { pool } from "./infrastructure/database/pool.js";
 
 const app = express();
@@ -26,14 +26,18 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 const server = app.listen(env.PORT, () => {
   console.log(`Servidor escuchando en http://localhost:${env.PORT}`);
-  recoverMissingPoints()
+  rebuildLeaderboard()
+    .then((users) => {
+      console.log(`Ranking reconstruido: ${users} usuarios`);
+      return recoverMissingPoints();
+    })
     .then((count) => {
       if (count > 0) {
         console.log(`Puntos pendientes recuperados: ${count} actividades`);
       }
     })
     .catch((error: unknown) => {
-      console.error("No se pudieron recuperar los puntos pendientes", error);
+      console.error("No se pudo preparar el ranking al arrancar", error);
     });
 });
 async function shutdown(): Promise<void> {

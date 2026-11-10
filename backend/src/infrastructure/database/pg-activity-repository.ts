@@ -158,7 +158,17 @@ export class PgActivityRepository implements ActivityRepository {
       userId: row.user_id,
     }));
   }
-
+  async listPointTotals(): Promise<{ userId: string; points: number }[]> {
+    const result = await pool.query<{ user_id: string; total: string }>(
+      `SELECT user_id, SUM(points) AS total
+       FROM point_events
+       GROUP BY user_id`
+    );
+    return result.rows.map((row) => ({
+      userId: row.user_id,
+      points: Number(row.total),
+    }));
+  }
     async findForPoints(id: string): Promise<ActivityForPoints | null> {
     const result = await pool.query<ActivityForPointsRow>(
       `SELECT al.id, al.user_id, al.duration_minutes, al.distance_km,
@@ -184,12 +194,13 @@ export class PgActivityRepository implements ActivityRepository {
     activityLogId: string,
     userId: string,
     points: number
-  ): Promise<void> {
-    await pool.query(
+  ): Promise<boolean> {
+    const result = await pool.query(
       `INSERT INTO point_events (user_id, activity_log_id, points, reason)
        VALUES ($1, $2, $3, 'activity')
        ON CONFLICT (activity_log_id) DO NOTHING`,
       [userId, activityLogId, points]
     );
+    return (result.rowCount ?? 0) > 0;
   }
 }

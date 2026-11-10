@@ -42,6 +42,7 @@ export interface ActivityRepository {
   findByIdForUser(id: string, userId: string): Promise<ActivityLog | null>;
   deleteForUser(id: string, userId: string): Promise<boolean>;
   findForPoints(id: string): Promise<ActivityForPoints | null>;
-  savePoints(activityLogId: string, userId: string, points: number): Promise<void>;
+   savePoints(activityLogId: string, userId: string, points: number): Promise<boolean>;
   listWithoutPoints(): Promise<{ activityLogId: string; userId: string }[]>;
+    listPointTotals(): Promise<{ userId: string; points: number }[]>;
 }
