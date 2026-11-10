@@ -4,6 +4,7 @@ import { authRouter } from "./presentation/routes/auth-routes.js";
 import cookieParser from "cookie-parser";
 import { activityRouter } from "./presentation/routes/activity-routes.js";
 import { leaderboardRouter } from "./presentation/routes/leaderboard-routes.js";
+import { challengeRouter } from "./presentation/routes/challenge-routes.js";
 import { attachLeaderboardSocket } from "./presentation/ws/leaderboard-socket.js";
 import cors from "cors";
 import {
@@ -27,6 +28,7 @@ app.get("/health", (_req: Request, res: Response) => {
 app.use("/auth", authRouter);
 app.use("/activities", activityRouter);
 app.use("/leaderboard", leaderboardRouter);
+app.use("/challenges", challengeRouter);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
