@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "migrate": "tsx src/infrastructure/database/migrate.ts",
     "dev": "tsx watch src/server.ts"
   },
@@ -33,7 +34,8 @@
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   },
   "allowScripts": {
     "argon2@0.45.1": true
