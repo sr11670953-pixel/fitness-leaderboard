@@ -1,14 +1,11 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import {
-  AuthService,
   ConflictError,
   UnauthorizedError,
 } from "../../application/auth-service.js";
-import { PgRefreshTokenRepository } from "../../infrastructure/database/pg-refresh-token-repository.js";
-import { PgUserRepository } from "../../infrastructure/database/pg-user-repository.js";
+import { authService } from "../../container.js";
 import { authenticate } from "../middlewares/authenticate.js";
-
 const registerSchema = z.object({
   email: z.string().email().max(255),
   username: z
@@ -24,10 +21,8 @@ const loginSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
-const authService = new AuthService(
-  new PgUserRepository(),
-  new PgRefreshTokenRepository()
-);
+
+
 
 export const authRouter = Router();
 
@@ -133,6 +128,24 @@ authRouter.post(
       if (typeof token === "string" && token.length > 0) {
         await authService.logout(token);
       }
+      res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+authRouter.post(
+  "/logout-all",
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: "No autenticado" });
+      return;
+    }
+    try {
+      await authService.logoutAll(userId);
       res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
       res.status(204).send();
     } catch (error) {

@@ -116,6 +116,9 @@ export class AuthService {
       await this.refreshTokens.revokeFamily(stored.familyId);
     }
   }
+    async logoutAll(userId: string): Promise<void> {
+    await this.refreshTokens.revokeAllForUser(userId);
+  }
 
   private async issueTokens(user: User, familyId: string): Promise<TokenPair> {
     const accessToken = jwt.sign(

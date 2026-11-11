@@ -1,9 +1,11 @@
+import { AuthService } from "./application/auth-service.js";
 import { ChallengeService } from "./application/challenge-service.js";
 import { LeaderboardService } from "./application/leaderboard-service.js";
 import { PointsWorker } from "./application/points-worker.js";
 import type { PointsJob } from "./domain/job-queue.js";
 import { PgActivityRepository } from "./infrastructure/database/pg-activity-repository.js";
 import { PgChallengeRepository } from "./infrastructure/database/pg-challenge-repository.js";
+import { PgRefreshTokenRepository } from "./infrastructure/database/pg-refresh-token-repository.js";
 import { PgUserRepository } from "./infrastructure/database/pg-user-repository.js";
 import { InMemoryLeaderboardStore } from "./infrastructure/leaderboard/in-memory-leaderboard-store.js";
 import { InMemoryJobQueue } from "./infrastructure/queue/in-memory-job-queue.js";
@@ -18,6 +20,10 @@ export const leaderboardService = new LeaderboardService(
   userRepository
 );
 export const challengeService = new ChallengeService(challengeRepository);
+export const authService = new AuthService(
+  userRepository,
+  new PgRefreshTokenRepository()
+);
 
 const pointsWorker = new PointsWorker(activityRepository, leaderboardStore);
 pointsQueue.process((job) => pointsWorker.handle(job));
