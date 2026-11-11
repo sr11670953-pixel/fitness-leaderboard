@@ -7,7 +7,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "migrate": "tsx src/infrastructure/database/migrate.ts",
-    "dev": "tsx watch src/server.ts"
+      "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts"
+
   },
   "keywords": [],
   "author": "",
@@ -22,6 +24,7 @@
     "express-rate-limit": "^8.7.4",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.1",
+    "tsx": "^4.23.15",
     "ws": "^8.22.2",
     "zod": "^4.6.5"
   },
@@ -33,7 +36,6 @@
     "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   },

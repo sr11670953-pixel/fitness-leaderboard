@@ -25,6 +25,7 @@ import {
 import { pool } from "./infrastructure/database/pool.js";
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(correlationId);
 app.use(requestLogger);
 app.use(

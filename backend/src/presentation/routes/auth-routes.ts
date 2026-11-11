@@ -6,6 +6,7 @@ import {
 } from "../../application/auth-service.js";
 import { authService } from "../../container.js";
 import { authenticate } from "../middlewares/authenticate.js";
+
 const registerSchema = z.object({
   email: z.string().email().max(255),
   username: z
@@ -21,8 +22,17 @@ const loginSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
+const SAME_SITE: "none" | "strict" =
+  process.env.NODE_ENV === "production" ? "none" : "strict";
 
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: SAME_SITE,
+  path: "/auth",
+} as const;
 
+const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const authRouter = Router();
 
@@ -50,6 +60,7 @@ authRouter.post(
     }
   }
 );
+
 authRouter.post(
   "/login",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -68,11 +79,8 @@ authRouter.post(
       );
 
       res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: "/auth",
+        ...REFRESH_COOKIE_OPTIONS,
+        maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       });
 
       res.status(200).json({ user, accessToken });
@@ -85,13 +93,6 @@ authRouter.post(
     }
   }
 );
-
-const REFRESH_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
-  path: "/auth",
-} as const;
 
 authRouter.post(
   "/refresh",
@@ -106,7 +107,7 @@ authRouter.post(
       const { accessToken, refreshToken } = await authService.refresh(token);
       res.cookie("refreshToken", refreshToken, {
         ...REFRESH_COOKIE_OPTIONS,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       });
       res.status(200).json({ accessToken });
     } catch (error) {
@@ -135,6 +136,7 @@ authRouter.post(
     }
   }
 );
+
 authRouter.post(
   "/logout-all",
   authenticate,
