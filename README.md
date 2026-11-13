@@ -33,3 +33,8 @@ Probar en http://localhost:3000/health
 
 Las rutas de /activities requieren la cabecera Authorization: Bearer <accessToken>.
 El accessToken se guarda en memoria; el refresh token viaja en cookie HttpOnly (usar withCredentials: true).
+
+## Despliegue
+
+- Backend (API y WebSocket): https://fitness-leaderboard-otob.onrender.com
+- Frontend: https://fitness-leaderboard-ashy.vercel.app
